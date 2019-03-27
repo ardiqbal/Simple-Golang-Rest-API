@@ -1,14 +1,14 @@
 package main
 
 import (
-	"./dbconfig"
-	"./routes"
+	"log"
+	"net/http"
+
+	"github.com/ardiqbal/Simple-Golang-Rest-API/app"
 )
 
 func main() {
-	// myRouter := routes.Routers()
-	// log.Fatal(http.ListenAndServe(":10000", myRouter))
-
-	dbConfig := dbconfig.Config()
-	routes.Init(dbConfig)
+	// dbConfig := dbconfig.Config()
+	// app.Init(dbConfig)
+	log.Fatal(http.ListenAndServe(":8000", app.Routers()))
 }
