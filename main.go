@@ -8,7 +8,5 @@ import (
 )
 
 func main() {
-	// dbConfig := dbconfig.Config()
-	// app.Init(dbConfig)
 	log.Fatal(http.ListenAndServe(":8000", app.Routers()))
 }
