@@ -1,13 +1,14 @@
 package main
 
 import (
-	"log"
-	"net/http"
-
+	"./dbconfig"
 	"./routes"
 )
 
 func main() {
-	myRouter := routes.Routers()
-	log.Fatal(http.ListenAndServe(":10000", myRouter))
+	// myRouter := routes.Routers()
+	// log.Fatal(http.ListenAndServe(":10000", myRouter))
+
+	dbConfig := dbconfig.Config()
+	routes.Init(dbConfig)
 }
