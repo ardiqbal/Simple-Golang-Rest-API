@@ -9,6 +9,7 @@ import (
 	"github.com/ardiqbal/Simple-Golang-Rest-API/database"
 	"github.com/ardiqbal/Simple-Golang-Rest-API/models"
 	"github.com/ardiqbal/Simple-Golang-Rest-API/util"
+	"github.com/gorilla/mux"
 )
 
 func CreateNewClass(w http.ResponseWriter, r *http.Request) {
@@ -52,7 +53,7 @@ func AddAttendance(w http.ResponseWriter, r *http.Request) {
 
 func GetAllClasses(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("Endpoint Hit: GetAllClasses")
-	allClasses := models.Classes{}
+	var allClasses []models.Class
 
 	db := database.Connect()
 	defer db.Close()
@@ -71,6 +72,36 @@ func GetAllClasses(w http.ResponseWriter, r *http.Request) {
 		log.Print(err.Error())
 		json.NewEncoder(w).Encode(util.GetHttpResponse{Success: false, Message: []string{"FAILED"}})
 	} else {
-		json.NewEncoder(w).Encode(util.GetHttpResponse{Success: true, Message: []string{"OK"}, Data: util.Data{allClasses}})
+		json.NewEncoder(w).Encode(util.GetHttpResponse{Success: true, Message: []string{"OK"}, Data: models.Classes{allClasses}})
 	}
+}
+
+func GetClassDetail(w http.ResponseWriter, r *http.Request) {
+	fmt.Println("Endpoint Hit: GetClassDetail")
+	var allAttendedStudents []models.Student
+	var classDetail models.ClassDetail
+	vars := mux.Vars(r)
+
+	db := database.Connect()
+	defer db.Close()
+	results, err := db.Query("SELECT class.id, class.class_name, class.class_time, class.room, class.created_at, class.updated_at, student.id, student.name, student.phone, student.created_at, student.updated_at FROM attendance LEFT JOIN class ON attendance.class_id = class.id LEFT JOIN student ON attendance.student_id = student.id WHERE attendance.class_id = ?", vars["id"])
+
+	for results.Next() {
+		var student models.Student
+		err = results.Scan(&classDetail.Id, &classDetail.ClassName, &classDetail.ClassTime, &classDetail.Room, &classDetail.CreatedAt, &classDetail.UpdatedAt, &student.Id, &student.Name, &student.Phone, &student.CreatedAt, &student.UpdatedAt)
+		if err != nil {
+			classDetail.ClassTime = util.Format(classDetail.ClassTime)
+			classDetail.CreatedAt = util.Format(classDetail.CreatedAt)
+			classDetail.UpdatedAt = util.Format(classDetail.UpdatedAt)
+		} else {
+			classDetail.ClassTime = util.Format(classDetail.ClassTime)
+			classDetail.CreatedAt = util.Format(classDetail.CreatedAt)
+			classDetail.UpdatedAt = util.Format(classDetail.UpdatedAt)
+			student.CreatedAt = util.Format(student.CreatedAt)
+			student.UpdatedAt = util.Format(student.UpdatedAt)
+			allAttendedStudents = append(allAttendedStudents, student)
+		}
+	}
+	classDetail.Attendance = allAttendedStudents
+	json.NewEncoder(w).Encode(util.GetHttpResponse{Success: true, Message: []string{"OK"}, Data: models.ClassDetailItem{classDetail}})
 }
