@@ -9,4 +9,11 @@ type Class struct {
 	UpdatedAt string `json:"updated_at"`
 }
 
+type Attendance struct {
+	AttendanceId string `json:"attendance_id"`
+	ClassId      string `json:"class_id"`
+	StudentId    string `json:"student_id"`
+	AttendTime   string `json:"attend_time"`
+}
+
 type Classes []Class

@@ -12,6 +12,7 @@ import (
 )
 
 func CreateNewClass(w http.ResponseWriter, r *http.Request) {
+	fmt.Println("Endpoint Hit: CreateNewClass")
 	newClass := models.Class{}
 	_ = json.NewDecoder(r.Body).Decode(&newClass)
 
@@ -21,19 +22,36 @@ func CreateNewClass(w http.ResponseWriter, r *http.Request) {
 	stmt, _ := db.Prepare("INSERT INTO class (id, class_name, class_time, room, created_at, updated_at) values (UUID(), ?, TIMESTAMP(?), ?, NOW(), NOW())")
 	_, err := stmt.Exec(newClass.ClassName, newClass.ClassTime, newClass.Room)
 
-	fmt.Println(newClass)
+	if err != nil {
+		log.Print(err.Error())
+		json.NewEncoder(w).Encode(util.PostHttpResponse{Success: false, Message: []string{"FAILED"}})
+	} else {
+		json.NewEncoder(w).Encode(util.PostHttpResponse{Success: true, Message: []string{"OK"}})
+	}
+}
+
+func AddAttendance(w http.ResponseWriter, r *http.Request) {
+	fmt.Println("Endpoint Hit: AddAttendance")
+
+	newAttendance := models.Attendance{}
+	_ = json.NewDecoder(r.Body).Decode(&newAttendance)
+
+	db := database.Connect()
+	defer db.Close()
+
+	stmt, _ := db.Prepare("INSERT INTO attendance (attendance_id, class_id, student_id, attend_time) values (UUID(), (SELECT id FROM class WHERE id = ?), (SELECT id FROM student WHERE id = ?), NOW())")
+	_, err := stmt.Exec(newAttendance.ClassId, newAttendance.StudentId)
 
 	if err != nil {
 		log.Print(err.Error())
 		json.NewEncoder(w).Encode(util.PostHttpResponse{Success: false, Message: []string{"FAILED"}})
+	} else {
+		json.NewEncoder(w).Encode(util.PostHttpResponse{Success: true, Message: []string{"OK"}})
 	}
-
-	fmt.Println("Endpoint Hit: CreateNewClass")
-
-	json.NewEncoder(w).Encode(util.PostHttpResponse{Success: true, Message: []string{"OK"}})
 }
 
 func GetAllClasses(w http.ResponseWriter, r *http.Request) {
+	fmt.Println("Endpoint Hit: GetAllClasses")
 	allClasses := models.Classes{}
 
 	db := database.Connect()
@@ -42,15 +60,17 @@ func GetAllClasses(w http.ResponseWriter, r *http.Request) {
 
 	for results.Next() {
 		var class models.Class
-		err = results.Scan(&class.Id, &class.ClassName, &class.ClassTime, &class.Room, &class.CreatedAt, &class.UpdatedAt)
-		if err != nil {
-			json.NewEncoder(w).Encode(util.GetHttpResponse{Success: false, Message: []string{"FAILED"}})
-		}
+		_ = results.Scan(&class.Id, &class.ClassName, &class.ClassTime, &class.Room, &class.CreatedAt, &class.UpdatedAt)
 		class.ClassTime = util.Format(class.ClassTime)
 		class.CreatedAt = util.Format(class.CreatedAt)
 		class.UpdatedAt = util.Format(class.UpdatedAt)
 		allClasses = append(allClasses, class)
 	}
 
-	json.NewEncoder(w).Encode(util.GetHttpResponse{Success: true, Message: []string{"OK"}, Data: util.Data{allClasses}})
+	if err != nil {
+		log.Print(err.Error())
+		json.NewEncoder(w).Encode(util.GetHttpResponse{Success: false, Message: []string{"FAILED"}})
+	} else {
+		json.NewEncoder(w).Encode(util.GetHttpResponse{Success: true, Message: []string{"OK"}, Data: util.Data{allClasses}})
+	}
 }
